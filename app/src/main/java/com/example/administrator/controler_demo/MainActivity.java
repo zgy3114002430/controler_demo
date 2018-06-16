@@ -378,7 +378,7 @@ public class MainActivity extends AppCompatActivity {
     private byte charToByte(char c) {
         return (byte)"0123456789ABCDEF".indexOf(c);
     }
-
+    //字节数组转化成字符串
     public static String bytesToHexFun1(byte[] bytes) {
         // 一个byte为8位，可用两个十六进制位标识
         char[] HEX_CHAR = {'0', '1', '2', '3', '4', '5',
