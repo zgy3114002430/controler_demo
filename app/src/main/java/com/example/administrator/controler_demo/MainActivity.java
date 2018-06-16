@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     //警报声
     public SoundPool smoke;
     public SoundPool somebody;
+    //首次功能码为03时获取设备编号
     public boolean flag=true;
     //存放感应器数据
     public String[] deviceData;
@@ -82,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //设置标题
+        //设置无标题主题
         ActionBar actionBar=getSupportActionBar();
         if(actionBar!=null){
             actionBar.hide();
@@ -112,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         somebody=new SoundPool(10,AudioManager.STREAM_ALARM,5);
         somebody.load(getApplication(),R.raw.somebody,1);
     }
-
+    //监听返回的数据报文
     public Runnable listener_recev=new Runnable() {
         @Override
         public void run() {
@@ -124,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
                         strforrecev=BinaryToHexString(recev);
                         getmsg=new getMsg(recev);
                         func=getmsg.getfunc();
+                        //判断功能码
                         judgeFunc();
                     }
                 }catch (IOException e){
@@ -152,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+
     //初始化Fragment碎片
     private void initFragment(){
         FragmentTransaction fragmentTransaction0=mFragmentManager.beginTransaction();
@@ -174,10 +177,14 @@ public class MainActivity extends AppCompatActivity {
 
     //判断功能
     public void judgeFunc() {
+         /*功能码为01时进行设备初始化的处理，
+           包括获取节点数量并存储节点地址到addr[]，
+           同时将节点上的设备编号存储在二维数组addrNum[][]*/
         if (func.equals("01")) {
             Log.i("返回功能1的协议报文",strforrecev);
             //节点数量
             num = getmsg.getJiedianNum();
+            //初始化存放节点地址的数组大小
             request=new byte[num][7];
             addrNum =new String[num][6];
             //每个节点的设备数量
@@ -197,17 +204,17 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (num == 2) {
                 addr = new String[2];
-                String address1 = getmsg.getDevice1();
-                String address2 = getmsg.getDevice2();
+                //String address1 = getmsg.getDevice1();
+                //String address2 = getmsg.getDevice2();
 
-                addr[0] = address1;
-                addr[1] = address2;
+                addr[0] = getmsg.getDevice1();
+                addr[1] = getmsg.getDevice2();
 
-                command1 = hexStringToBytes("063A" + address1 + "023923");
-                command2 = hexStringToBytes("063A" + address2 + "023923");
+                command1 = hexStringToBytes("063A" + addr[0] + "023923");
+                command2 = hexStringToBytes("063A" + addr[1] + "023923");
 
-                request[0]=hexStringToBytes("063A"+address1+"033823");
-                request[1]=hexStringToBytes("063A"+address2+"033823");
+                request[0]=hexStringToBytes("063A"+addr[0]+"033823");
+                request[1]=hexStringToBytes("063A"+addr[1]+"033823");
                 try {
                     outputStreamClient.write(command1);
                     outputStreamClient.flush();
@@ -223,21 +230,23 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (num == 3) {
                 addr = new String[3];
-                String address1 = getmsg.getDevice1();
+
+
+                /*String address1 = getmsg.getDevice1();
                 String address2 = getmsg.getDevice2();
-                String address3 = getmsg.getDevice3();
+                String address3 = getmsg.getDevice3();*/
 
-                addr[0] = address1;
-                addr[1] = address2;
-                addr[2] = address3;
+                addr[0] = getmsg.getDevice1();
+                addr[1] = getmsg.getDevice2();
+                addr[2] = getmsg.getDevice3();
 
-                command1 = hexStringToBytes("063A" + address1 + "023923");
-                command2 = hexStringToBytes("063A" + address2 + "023923");
-                command3 = hexStringToBytes("063A" + address3 + "023923");
+                command1 = hexStringToBytes("063A" + addr[0] + "023923");
+                command2 = hexStringToBytes("063A" + addr[1] + "023923");
+                command3 = hexStringToBytes("063A" + addr[2] + "023923");
 
-                request[0]=hexStringToBytes("063A"+address1+"033823");
-                request[1]=hexStringToBytes("063A"+address2+"033823");
-                request[2]=hexStringToBytes("063A"+address3+"033823");
+                request[0]=hexStringToBytes("063A"+addr[0]+"033823");
+                request[1]=hexStringToBytes("063A"+addr[1]+"033823");
+                request[2]=hexStringToBytes("063A"+addr[2]+"033823");
                 try {
                     outputStreamClient.write(command1);
                     outputStreamClient.flush();
@@ -265,13 +274,15 @@ public class MainActivity extends AppCompatActivity {
                     addrNum[i]=getmsg.getDeviceNum();
                 }
             }
-            for(int i=0;i<num;i++){
+            //打印设备编号
+            /*for(int i=0;i<num;i++){
                 for(int j=0;j<jieDian[i];j++){
                     Log.i("编号",addrNum[i][j]);
                 }
-            }
+            }*/
         }else if(func.equals("03")){
             Log.i("返回数据请求协议报文",strforrecev);
+            //广播开始
             Intent intent=new Intent("receiver of livingRom");
             if(flag){
                 for(int i=0;i<num;i++){
@@ -305,6 +316,7 @@ public class MainActivity extends AppCompatActivity {
             int s=0;
             int index=0;
             while(s<num){
+                //遍历寻找位于该节点上的设备编号
                 if(getmsg.getJiedianAddr().equals(addr[s])){
                     if(flag_light[0].equals(String.valueOf(s))){
                         String data=getmsg.getData(Integer.parseInt(flag_light[1]));
